@@ -119,9 +119,82 @@ textarea{resize:vertical;min-height:60px}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a3a2a;color:#fff;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:500;opacity:0;transition:all .3s;z-index:9999;pointer-events:none;white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .toast.err{background:#8a1a1a}
+
+@media print {
+  body > *:not(#print-frame){ display:none !important; }
+  #print-frame{ display:block !important; }
+}
+#print-frame{ display:none; }
+.print-page{
+  width:80mm;
+  font-family:'Hiragino Kaku Gothic Pro','Meiryo',sans-serif;
+  font-size:12px;
+  color:#000;
+  padding:4mm 3mm;
+  page-break-after:always;
+}
+.print-page:last-child{ page-break-after:auto; }
+.print-shop{ font-size:11px; text-align:center; margin-bottom:2mm; }
+.print-type{ font-size:14px; font-weight:bold; text-align:center; border:1px solid #000; padding:1mm 0; margin-bottom:2mm; }
+.print-customer{ font-size:16px; font-weight:bold; margin-bottom:1mm; }
+.print-tel{ font-size:12px; margin-bottom:2mm; color:#000; }
+.print-due-label{ font-size:10px; color:#000; }
+.print-due{ font-size:18px; font-weight:bold; margin-bottom:3mm; }
+.print-divider{ border:none; border-top:1px dashed #000; margin:2mm 0; }
+.print-row{ display:flex; justify-content:space-between; font-size:11px; margin-bottom:1mm; }
+.print-row-label{ color:#555; }
+.print-row-val{ font-weight:500; text-align:right; max-width:55mm; }
+.print-racket-title{ font-size:12px; font-weight:bold; margin:2mm 0 1mm; border-left:3px solid #000; padding-left:2mm; }
+.print-note{ font-size:10px; color:#444; margin-top:2mm; border-top:1px solid #ccc; padding-top:1mm; }
+.print-footer{ font-size:10px; text-align:center; margin-top:3mm; color:#000; }
+
+.add-modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.45);z-index:1000;display:none;align-items:center;justify-content:center}
+.add-modal-overlay.show{display:flex}
+.add-modal{background:#fff;border-radius:14px;padding:1.5rem;width:calc(100% - 2rem);max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.18)}
+.add-modal-title{font-size:15px;font-weight:500;margin-bottom:1rem;text-align:center}
+.add-modal-btns{display:flex;flex-direction:column;gap:10px}
+.add-modal-btn{padding:14px;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;border:0.5px solid;font-family:inherit;text-align:left;display:flex;align-items:center;gap:10px;transition:all .15s}
+.add-modal-btn.green{background:#e8f5ee;border-color:#4caf8a;color:#1a6b42}
+.add-modal-btn.green:hover{background:#d4eede}
+.add-modal-btn.blue{background:#e8f0fe;border-color:#4a6fa5;color:#1a3a8a}
+.add-modal-btn.blue:hover{background:#d4e0f4}
+.add-modal-cancel{margin-top:6px;padding:10px;border-radius:8px;font-size:13px;cursor:pointer;border:0.5px solid rgba(0,0,0,.2);background:transparent;color:#666;font-family:inherit;width:100%}
+.copy-select-label{font-size:12px;color:#666;margin-bottom:6px;margin-top:2px}
+.copy-select{width:100%;padding:8px 10px;border:0.5px solid rgba(0,0,0,.2);border-radius:8px;font-size:14px;font-family:inherit;background:#fff}
 </style>
 </head>
 <body>
+
+<div class="add-modal-overlay" id="add-racket-modal">
+  <div class="add-modal">
+    <div class="add-modal-title">ラケットの追加方法を選択</div>
+    <div class="add-modal-btns">
+      <button type="button" class="add-modal-btn green" onclick="addRacketBlank()">
+        <span style="font-size:20px">📋</span>
+        <div>
+          <div>空欄で追加</div>
+          <div style="font-size:11px;font-weight:400;color:#4a7a5a;margin-top:2px">新しいラケット情報をゼロから入力</div>
+        </div>
+      </button>
+      <button type="button" class="add-modal-btn blue" onclick="showCopySelect()">
+        <span style="font-size:20px">📑</span>
+        <div>
+          <div>入力済みからコピー</div>
+          <div style="font-size:11px;font-weight:400;color:#4a5a8a;margin-top:2px">既存のラケット情報をコピーして追加</div>
+        </div>
+      </button>
+      <div id="copy-select-wrap" style="display:none">
+        <div class="copy-select-label">コピー元のラケットを選択：</div>
+        <select class="copy-select" id="copy-select-source"></select>
+        <button type="button" class="add-modal-btn blue" style="margin-top:8px;width:100%;justify-content:center" onclick="addRacketCopy()">
+          このラケットをコピーして追加
+        </button>
+      </div>
+    </div>
+    <button type="button" class="add-modal-cancel" onclick="closeAddModal()">キャンセル</button>
+  </div>
+</div>
+<div id="print-frame"></div>
 <div class="app-header">
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
   <h1>ガット張り受付システム</h1>
@@ -146,17 +219,23 @@ textarea{resize:vertical;min-height:60px}
     </div>
     <div class="sc">
       <div class="st">お客様情報</div>
-      <div class="fg">
-        <label class="fl">お客様名 <span class="req">*</span></label>
-        <input type="text" id="f-customer" placeholder="例：山田 太郎">
-        <div class="emsg" id="err-customer">お客様名を入力してください</div>
+      <div class="g2">
+        <div class="fg">
+          <label class="fl">お客様名 <span class="req">*</span></label>
+          <input type="text" id="f-customer" placeholder="例：山田 太郎">
+          <div class="emsg" id="err-customer">お客様名を入力してください</div>
+        </div>
+        <div class="fg">
+          <label class="fl">電話番号</label>
+          <input type="text" id="f-tel" placeholder="例：090-1234-5678">
+        </div>
       </div>
     </div>
     <div class="sc">
       <div class="st">ラケット・ガット情報</div>
       <div class="racket-tabs" id="racket-tabs"></div>
       <div id="racket-panels"></div>
-      <div style="margin-top:.5rem"><button type="button" class="add-racket-btn" onclick="addRacket()">＋ ラケットを追加</button></div>
+      <div style="margin-top:.5rem"><button type="button" class="add-racket-btn" onclick="openAddModal()">＋ ラケットを追加</button></div>
     </div>
     <div class="sc">
       <div class="st">会計</div>
@@ -635,6 +714,7 @@ function resetForm(){
   document.getElementById('f-received').value=toLocalDt(new Date());
   document.getElementById('f-due').value='';
   var c=document.getElementById('f-customer');c.value='';c.classList.remove('ferr');
+  var tEl=document.getElementById('f-tel');if(tEl)tEl.value='';
   document.getElementById('err-customer').classList.remove('show');
   document.getElementById('errbanner').classList.remove('show');
   initForm();
@@ -666,11 +746,105 @@ function submitForm(e){
   }
   document.getElementById('errbanner').classList.remove('show');
   var rktData=rackets.map(function(id){return getRacketData(id);});
-  var order={id:Date.now().toString(),createdAt:new Date().toISOString(),received:document.getElementById('f-received').value,due:document.getElementById('f-due').value,customer:cust.value.trim(),payment:getRG('rg-payment'),rackets:rktData};
+  var tel=document.getElementById('f-tel')?document.getElementById('f-tel').value.trim():'';
+  var order={id:Date.now().toString(),createdAt:new Date().toISOString(),received:document.getElementById('f-received').value,due:document.getElementById('f-due').value,customer:cust.value.trim(),tel:tel,payment:getRG('rg-payment'),rackets:rktData};
   var orders=getOrders();orders.unshift(order);saveOrders(orders);
   pushToSheets([order],true);
-  showToast('受付登録しました！（ラケット'+rktData.length+'本）');resetForm();
+  showToast('受付登録しました！（ラケット'+rktData.length+'本）');
+  printOrder(order);
+  resetForm();
 }
+
+function fmtDtFull(dt){
+  if(!dt)return'未設定';
+  var d=new Date(dt);
+  return d.getFullYear()+'年'+
+    (d.getMonth()+1)+'月'+
+    d.getDate()+'日（'+
+    ['日','月','火','水','木','金','土'][d.getDay()]+'）'+
+    String(d.getHours()).padStart(2,'0')+':'+
+    String(d.getMinutes()).padStart(2,'0');
+}
+
+function buildPrintHTML(order){
+  var pages='';
+  var due=fmtDtFull(order.due);
+  var rackets=order.rackets||[];
+
+  // 1枚分の共通レイアウト（お客様控え・伝票とも同じ）
+  function singlePage(typeLabel, showFooter){
+    var p='';
+    p+='<div class="print-page">';
+    p+='<div class="print-type">'+typeLabel+'</div>';
+    p+='<div class="print-customer">'+order.customer+' 様</div>';
+    if(order.tel) p+='<div class="print-tel">TEL: '+order.tel+'</div>';
+    p+='<hr class="print-divider">';
+    p+='<div class="print-due-label">仕上がり予定日時</div>';
+    p+='<div class="print-due">'+due+'</div>';
+    if(showFooter) p+='<div class="print-footer">ご来店ありがとうございます</div>';
+    p+='</div>';
+    return p;
+  }
+
+  // お客様控え（1枚）
+  pages+=singlePage('★ お客様控え', true);
+
+  // ラケット伝票（1枚のみ）
+  pages+=singlePage('【 伝 票 】', false);
+
+  return pages;
+}
+function printOrder(order){
+  var frame=document.getElementById('print-frame');
+  frame.innerHTML=buildPrintHTML(order);
+  setTimeout(function(){ window.print(); },300);
+}
+
+function printOrderById(id){
+  var orders=getOrders();
+  var o=orders.find(function(x){return x.id===id;});
+  if(!o){showToast('データが見つかりません',true);return;}
+  printOrder(o);
+}
+
+function openAddModal(){
+  // コピー選択リストを更新
+  var sel=document.getElementById('copy-select-source');
+  sel.innerHTML='';
+  rackets.forEach(function(id,i){
+    var racketName=document.getElementById(id+'-racket')?document.getElementById(id+'-racket').value:'';
+    var opt=document.createElement('option');
+    opt.value=id;
+    opt.textContent='ラケット '+(i+1)+(racketName?' ／ '+racketName:'');
+    sel.appendChild(opt);
+  });
+  document.getElementById('copy-select-wrap').style.display='none';
+  document.getElementById('add-racket-modal').classList.add('show');
+}
+function closeAddModal(){
+  document.getElementById('add-racket-modal').classList.remove('show');
+}
+function addRacketBlank(){
+  closeAddModal();
+  addRacket();
+}
+function showCopySelect(){
+  document.getElementById('copy-select-wrap').style.display='block';
+}
+function addRacketCopy(){
+  var sel=document.getElementById('copy-select-source');
+  var srcId=sel.value;
+  if(!srcId){closeAddModal();return;}
+  // コピー元のデータを取得
+  var data=getRacketData(srcId);
+  closeAddModal();
+  addRacket(data);
+}
+// モーダル外クリックで閉じる
+document.addEventListener('click',function(e){
+  var modal=document.getElementById('add-racket-modal');
+  if(modal&&e.target===modal)closeAddModal();
+});
 function getOrders(){try{return JSON.parse(localStorage.getItem(STORE_KEY)||'[]');}catch(e){return[];}}
 function saveOrders(o){localStorage.setItem(STORE_KEY,JSON.stringify(o));}
 function fmtDt(dt){if(!dt)return'';var d=new Date(dt);return d.toLocaleString('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});}
@@ -721,6 +895,8 @@ function renderList(){
       '<div class="rkt-list">'+ri+'</div>'+
       '<div class="oa">'+
         (o.payment==='会計未'?'<button class="ab primary" onclick="togglePay(\''+o.id+'\')">会計済みにする</button>':'<button class="ab" onclick="togglePay(\''+o.id+'\')">会計未に戻す</button>')+
+        '<button class="ab" onclick="pushSingleOrder(\''+o.id+'\')">📤 Sheetsに登録</button>'+
+        '<button class="ab" onclick="printOrderById(\''+o.id+'\')">🖨 伝票印刷</button>'+
         '<button class="ab danger" style="margin-left:auto" onclick="deleteOrder(\''+o.id+'\')">削除</button>'+
       '</div></div>';
   }).join('');
@@ -734,6 +910,13 @@ function pushToSheets(orders,silent){
   fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'append',rows:rows})})
     .then(function(){if(!silent)showToast('スプレッドシートに書き込みました！');})
     .catch(function(e){if(!silent)showToast('書き込みエラー: '+e.message,true);});
+}
+
+function pushSingleOrder(id){
+  var orders=getOrders();
+  var o=orders.find(function(x){return x.id===id;});
+  if(!o){showToast('データが見つかりません',true);return;}
+  pushToSheets([o],false);
 }
 function exportToSheets(){var orders=getOrders();if(!orders.length){showToast('データがありません',true);return;}pushToSheets(orders,false);}
 function loadSettings(){var s=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}');document.getElementById('gas-url').value=s.gasUrl||'';}
